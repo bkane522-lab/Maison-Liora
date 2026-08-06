@@ -109,9 +109,11 @@
       <span class="eyebrow">Étape 5 sur 7</span>
       <h2>Quelques photos de l'espace</h2>
       <p>Facultatif mais très utile pour l'analyse de votre dossier.</p>
-      <div class="zone-upload" id="zone-photos">
-        <p style="margin:0;">Cliquez pour ajouter des photos</p>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+        <button type="button" class="btn btn-secondaire" id="btn-camera-photos" style="flex:1;">📷 Prendre une photo</button>
+        <button type="button" class="btn btn-secondaire" id="btn-galerie-photos" style="flex:1;">🖼️ Choisir depuis la galerie</button>
       </div>
+      <input type="file" id="input-camera-photos" accept="image/*" capture="environment" hidden />
       <input type="file" id="input-photos" accept="image/*" multiple hidden />
       <div class="miniatures" id="miniatures-photos"></div>
     </div>
@@ -218,13 +220,10 @@
     choixStyle.appendChild(carte);
   });
 
-  // --- Étape 5 & 6 : upload ---
-  function configurerZoneUpload(zoneId, inputId, miniaturesId, tableauCible) {
-    const zone = document.getElementById(zoneId);
-    const input = document.getElementById(inputId);
-    const miniatures = document.getElementById(miniaturesId);
-    zone.addEventListener("click", () => input.click());
+  // --- Upload de fichiers (photos & documents) ---
+  function ajouterFichiersDepuisInput(input, miniaturesId, tableauCible) {
     input.addEventListener("change", () => {
+      const miniatures = document.getElementById(miniaturesId);
       Array.from(input.files).forEach((fichier) => {
         tableauCible.push(fichier);
         const vignette = document.createElement("div");
@@ -243,10 +242,20 @@
         }
         miniatures.appendChild(vignette);
       });
+      // Réinitialise l'input pour permettre de rajouter le même fichier si besoin
+      input.value = "";
     });
   }
-  configurerZoneUpload("zone-photos", "input-photos", "miniatures-photos", etat.photos);
-  configurerZoneUpload("zone-documents", "input-documents", "liste-documents", etat.documents);
+
+  // Photos : deux entrées possibles (appareil photo + galerie), même tableau et mêmes miniatures
+  ajouterFichiersDepuisInput(document.getElementById("input-camera-photos"), "miniatures-photos", etat.photos);
+  ajouterFichiersDepuisInput(document.getElementById("input-photos"), "miniatures-photos", etat.photos);
+  document.getElementById("btn-camera-photos").addEventListener("click", () => document.getElementById("input-camera-photos").click());
+  document.getElementById("btn-galerie-photos").addEventListener("click", () => document.getElementById("input-photos").click());
+
+  // Documents : zone cliquable classique
+  ajouterFichiersDepuisInput(document.getElementById("input-documents"), "liste-documents", etat.documents);
+  document.getElementById("zone-documents").addEventListener("click", () => document.getElementById("input-documents").click());
 
   // --- Navigation ---
   const btnSuivant = document.getElementById("btn-suivant");
