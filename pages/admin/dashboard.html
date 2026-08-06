@@ -1,1 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Espace administrateur — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
 
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
+    <div class="nav-liens">
+      <a href="/pages/admin/dashboard.html">Dossiers</a>
+      <a href="/pages/admin/clients.html">Clients</a>
+      <a href="#" id="lien-deconnexion">Déconnexion</a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">Espace administrateur</span>
+        <h1 style="margin:0;">Tous les dossiers</h1>
+      </div>
+      <select id="filtre-statut" style="padding:12px 16px; border-radius:10px; border:1px solid var(--bordure); font-family: var(--font-body);">
+        <option value="">Tous les statuts</option>
+      </select>
+    </div>
+
+    <div id="liste-dossiers" style="display:grid; gap:14px;"></div>
+    <p id="etat-vide" style="display:none;">Aucun dossier pour ce statut.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config/brand.config.js"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+(async () => {
+  const utilisateur = await exigerSession("/login.html");
+  if (!utilisateur) return;
+  const client = await obtenirClientSupabase();
+
+  const admin = await estAdmin(utilisateur.id);
+  if (!admin) { window.location.href = "/dashboard.html"; return; }
+
+  const selectStatut = document.getElementById("filtre-statut");
+  window.BRAND.statuses.forEach((s) => {
+    const option = document.createElement("option");
+    option.value = s.id;
+    option.textContent = s.label;
+    selectStatut.appendChild(option);
+  });
+
+  const typesParId = Object.fromEntries(window.BRAND.projectTypes.map((t) => [t.id, t.label]));
+  const statutsParId = Object.fromEntries(window.BRAND.statuses.map((s) => [s.id, s.label]));
+
+  async function chargerDossiers() {
+    let requete = client
+      .from("projects")
+      .select("id, titre, type_projet, statut, created_at, profiles:client_id(nom_complet)")
+      .order("created_at", { ascending: false });
+
+    if (selectStatut.value) requete = requete.eq("statut", selectStatut.value);
+
+    const { data: dossiers, error } = await requete;
+    const conteneur = document.getElementById("liste-dossiers");
+    const etatVide = document.getElementById("etat-vide");
+    conteneur.innerHTML = "";
+
+    if (error || !dossiers || dossiers.length === 0) {
+      etatVide.style.display = "block";
+      return;
+    }
+    etatVide.style.display = "none";
+
+    dossiers.forEach((dossier) => {
+      const carte = document.createElement("a");
+      carte.href = `/pages/admin/projet-detail.html?id=${dossier.id}`;
+      carte.className = "carte carte-lien";
+      carte.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 style="margin-bottom:4px;">${dossier.titre || "Sans titre"}</h3>
+            <p style="margin:0;">${dossier.profiles?.nom_complet || "Client"} · ${typesParId[dossier.type_projet] || ""}</p>
+          </div>
+          <span class="badge"><span class="badge-dot"></span>${statutsParId[dossier.statut] || dossier.statut}</span>
+        </div>
+      `;
+      conteneur.appendChild(carte);
+    });
+  }
+
+  selectStatut.addEventListener("change", chargerDossiers);
+  chargerDossiers();
+})();
+
+document.getElementById("lien-deconnexion").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const client = await obtenirClientSupabase();
+  await client.auth.signOut();
+  window.location.href = "/login.html";
+});
+</script>
+</body>
+</html>

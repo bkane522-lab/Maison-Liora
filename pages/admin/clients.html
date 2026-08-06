@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clients — Espace administrateur — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
+    <div class="nav-liens">
+      <a href="/pages/admin/dashboard.html">Dossiers</a>
+      <a href="/pages/admin/clients.html">Clients</a>
+      <a href="#" id="lien-deconnexion">Déconnexion</a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur">
+    <span class="eyebrow">Espace administrateur</span>
+    <h1>Tous les clients</h1>
+
+    <div class="carte" style="padding:0; overflow:hidden; margin-top:24px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--creme); text-align:left;">
+            <th style="padding:14px 20px; font-size:0.82rem; color:var(--texte-doux);">Nom</th>
+            <th style="padding:14px 20px; font-size:0.82rem; color:var(--texte-doux);">E-mail</th>
+            <th style="padding:14px 20px; font-size:0.82rem; color:var(--texte-doux);">Dossiers</th>
+            <th style="padding:14px 20px; font-size:0.82rem; color:var(--texte-doux);">Inscrit le</th>
+          </tr>
+        </thead>
+        <tbody id="corps-tableau"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+(async () => {
+  const utilisateur = await exigerSession("/login.html");
+  if (!utilisateur) return;
+  const client = await obtenirClientSupabase();
+  const admin = await estAdmin(utilisateur.id);
+  if (!admin) { window.location.href = "/dashboard.html"; return; }
+
+  // Nombre de dossiers par client — nécessite la fonction RPC compter_projets_par_client
+  // (voir supabase/schema.sql) car un client ne peut normalement pas lire les projets
+  // des autres ; côté admin la RLS l'autorise directement sur `projects`.
+  const { data: clients } = await client.from("profiles").select("id, nom_complet, email, created_at").order("created_at", { ascending: false });
+  const { data: projets } = await client.from("projects").select("client_id");
+
+  const compteParClient = {};
+  (projets || []).forEach((p) => { compteParClient[p.client_id] = (compteParClient[p.client_id] || 0) + 1; });
+
+  const corps = document.getElementById("corps-tableau");
+  (clients || []).forEach((c) => {
+    const ligne = document.createElement("tr");
+    ligne.style.borderTop = "1px solid var(--bordure)";
+    ligne.innerHTML = `
+      <td style="padding:14px 20px;">${c.nom_complet || "—"}</td>
+      <td style="padding:14px 20px;">${c.email || "—"}</td>
+      <td style="padding:14px 20px;">${compteParClient[c.id] || 0}</td>
+      <td style="padding:14px 20px;">${new Date(c.created_at).toLocaleDateString("fr-FR")}</td>
+    `;
+    corps.appendChild(ligne);
+  });
+})();
+
+document.getElementById("lien-deconnexion").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const client = await obtenirClientSupabase();
+  await client.auth.signOut();
+  window.location.href = "/login.html";
+});
+</script>
+</body>
+</html>
