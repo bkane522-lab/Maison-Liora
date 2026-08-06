@@ -11,7 +11,7 @@
 
 <nav class="nav">
   <div class="nav-interieur">
-    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
+    <a href="/pages/admin/dashboard.html" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
     <div class="nav-liens">
       <a href="/pages/admin/dashboard.html">Dossiers</a>
       <a href="/pages/admin/clients.html">Clients</a>
@@ -51,9 +51,6 @@
   const admin = await estAdmin(utilisateur.id);
   if (!admin) { window.location.href = "/dashboard.html"; return; }
 
-  // Nombre de dossiers par client — nécessite la fonction RPC compter_projets_par_client
-  // (voir supabase/schema.sql) car un client ne peut normalement pas lire les projets
-  // des autres ; côté admin la RLS l'autorise directement sur `projects`.
   const { data: clients } = await client.from("profiles").select("id, nom_complet, email, created_at").order("created_at", { ascending: false });
   const { data: projets } = await client.from("projects").select("client_id");
 
