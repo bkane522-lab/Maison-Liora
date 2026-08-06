@@ -34,7 +34,6 @@
 
     <div id="liste-dossiers" style="display:grid; gap:14px;"></div>
     <p id="etat-vide" style="display:none;">Aucun dossier pour ce statut.</p>
-    <p id="etat-erreur" style="display:none; color: var(--erreur);"></p>
   </div>
 </section>
 
@@ -62,41 +61,33 @@
   const statutsParId = Object.fromEntries(window.BRAND.statuses.map((s) => [s.id, s.label]));
 
   async function chargerDossiers() {
-    const etatVide = document.getElementById("etat-vide");
-    const etatErreur = document.getElementById("etat-erreur");
-    const conteneur = document.getElementById("liste-dossiers");
-    conteneur.innerHTML = "";
-    etatVide.style.display = "none";
-    etatErreur.style.display = "none";
-
-    // 1. Récupérer les projets (sans jointure automatique)
     let requete = client
       .from("projects")
-      .select("id, titre, type_projet, statut, created_at, client_id")
+      .select("id, titre, type_projet, statut, client_id, created_at")
       .order("created_at", { ascending: false });
 
     if (selectStatut.value) requete = requete.eq("statut", selectStatut.value);
 
     const { data: dossiers, error } = await requete;
+    const conteneur = document.getElementById("liste-dossiers");
+    const etatVide = document.getElementById("etat-vide");
+    conteneur.innerHTML = "";
 
     if (error) {
-      etatErreur.textContent = "Erreur lors du chargement : " + error.message;
-      etatErreur.style.display = "block";
-      return;
-    }
-
-    if (!dossiers || dossiers.length === 0) {
+      etatVide.textContent = `Erreur de chargement : ${error.message}`;
       etatVide.style.display = "block";
       return;
     }
+    if (!dossiers || dossiers.length === 0) {
+      etatVide.textContent = "Aucun dossier pour ce statut.";
+      etatVide.style.display = "block";
+      return;
+    }
+    etatVide.style.display = "none";
 
-    // 2. Récupérer les profils clients correspondants séparément
+    // Récupère les noms des clients séparément (évite le souci de relation projects<->profiles)
     const idsClients = [...new Set(dossiers.map((d) => d.client_id))];
-    const { data: profils } = await client
-      .from("profiles")
-      .select("id, nom_complet")
-      .in("id", idsClients);
-
+    const { data: profils } = await client.from("profiles").select("id, nom_complet").in("id", idsClients);
     const nomsParClient = Object.fromEntries((profils || []).map((p) => [p.id, p.nom_complet]));
 
     dossiers.forEach((dossier) => {
