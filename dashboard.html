@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mon espace — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora</a>
+    <div class="nav-liens">
+      <a href="/profil.html">Mon profil</a>
+      <a href="#" id="lien-deconnexion">Déconnexion</a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:36px;">
+      <div>
+        <span class="eyebrow">Mon espace</span>
+        <h1 id="titre-bienvenue" style="margin:0;">Bonjour</h1>
+      </div>
+      <a href="/nouveau-projet.html" class="btn btn-primaire btn-large">+ Nouveau projet</a>
+    </div>
+
+    <div id="etat-vide" class="carte centre" style="display:none; padding: 56px 20px;">
+      <div class="arche-motif"></div>
+      <h3>Aucun dossier pour le moment</h3>
+      <p>Créez votre premier dossier pour démarrer votre projet avec Maison Liora.</p>
+      <a href="/nouveau-projet.html" class="btn btn-primaire">Créer mon premier dossier</a>
+    </div>
+
+    <div id="liste-projets" style="display:grid; gap:16px;"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config/brand.config.js"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+  (async () => {
+    const utilisateur = await exigerSession();
+    if (!utilisateur) return;
+
+    const client = await obtenirClientSupabase();
+
+    const { data: profil } = await client.from("profiles").select("nom_complet").eq("id", utilisateur.id).maybeSingle();
+    document.getElementById("titre-bienvenue").textContent = `Bonjour ${profil?.nom_complet?.split(" ")[0] || ""}`;
+
+    const { data: projets, error } = await client
+      .from("projects")
+      .select("id, titre, type_projet, style, statut, created_at")
+      .eq("client_id", utilisateur.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      afficherToast("Impossible de charger vos dossiers.", true);
+      return;
+    }
+
+    if (!projets || projets.length === 0) {
+      document.getElementById("etat-vide").style.display = "block";
+      return;
+    }
+
+    const conteneur = document.getElementById("liste-projets");
+    const statutsParId = Object.fromEntries(window.BRAND.statuses.map((s) => [s.id, s.label]));
+    const typesParId = Object.fromEntries(window.BRAND.projectTypes.map((t) => [t.id, t.label]));
+
+    projets.forEach((projet) => {
+      const carte = document.createElement("a");
+      carte.href = `/suivi.html?id=${projet.id}`;
+      carte.className = "carte carte-lien";
+      carte.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 style="margin-bottom:6px;">${projet.titre || typesParId[projet.type_projet] || "Projet"}</h3>
+            <p style="margin:0;">${typesParId[projet.type_projet] || ""}${projet.style ? " · " + projet.style : ""}</p>
+          </div>
+          <span class="badge"><span class="badge-dot"></span>${statutsParId[projet.statut] || projet.statut}</span>
+        </div>
+      `;
+      conteneur.appendChild(carte);
+    });
+  })();
+
+  document.getElementById("lien-deconnexion").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const client = await obtenirClientSupabase();
+    await client.auth.signOut();
+    window.location.href = "/login.html";
+  });
+</script>
+</body>
+</html>

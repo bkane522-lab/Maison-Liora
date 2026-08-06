@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Suivi de mon dossier — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora</a>
+    <div class="nav-liens"><a href="/dashboard.html">Mon espace</a></div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur" style="max-width: 720px;">
+    <div id="contenu-chargement" class="centre"><p>Chargement du dossier…</p></div>
+
+    <div id="contenu-projet" style="display:none;">
+      <span class="eyebrow" id="type-projet"></span>
+      <h1 id="titre-projet"></h1>
+      <span class="badge" id="badge-statut" style="margin-bottom:28px;"><span class="badge-dot"></span><span id="texte-statut"></span></span>
+
+      <div class="carte" style="margin-bottom:20px;">
+        <h3>Avancement</h3>
+        <div id="etapes-statut"></div>
+      </div>
+
+      <div class="carte" style="margin-bottom:20px;">
+        <h3>Détails du dossier</h3>
+        <p id="detail-pieces"></p>
+        <p id="detail-description"></p>
+      </div>
+
+      <div class="carte">
+        <h3>Notes de suivi</h3>
+        <div id="liste-notes"><p>Aucune note pour le moment.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config/brand.config.js"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+(async () => {
+  const utilisateur = await exigerSession();
+  if (!utilisateur) return;
+
+  const idProjet = new URLSearchParams(window.location.search).get("id");
+  if (!idProjet) { window.location.href = "/dashboard.html"; return; }
+
+  const client = await obtenirClientSupabase();
+
+  const { data: projet, error } = await client
+    .from("projects")
+    .select("*, questionnaires(*)")
+    .eq("id", idProjet)
+    .eq("client_id", utilisateur.id) // la RLS l'impose déjà, sécurité en double
+    .single();
+
+  if (error || !projet) {
+    document.getElementById("contenu-chargement").textContent = "Dossier introuvable.";
+    return;
+  }
+
+  const typesParId = Object.fromEntries(window.BRAND.projectTypes.map((t) => [t.id, t.label]));
+  const statutsOrdonnes = window.BRAND.statuses;
+  const statutsParId = Object.fromEntries(statutsOrdonnes.map((s) => [s.id, s.label]));
+
+  document.getElementById("type-projet").textContent = typesParId[projet.type_projet] || "";
+  document.getElementById("titre-projet").textContent = projet.titre;
+  document.getElementById("texte-statut").textContent = statutsParId[projet.statut] || projet.statut;
+
+  const questionnaire = projet.questionnaires?.[0];
+  if (questionnaire) {
+    document.getElementById("detail-pieces").innerHTML = `<strong>Pièces :</strong> ${questionnaire.pieces || "—"}`;
+    document.getElementById("detail-description").innerHTML = `<strong>Description :</strong> ${questionnaire.description || "—"}`;
+  }
+
+  const indexStatutActuel = statutsOrdonnes.findIndex((s) => s.id === projet.statut);
+  const conteneurEtapes = document.getElementById("etapes-statut");
+  statutsOrdonnes.forEach((statut, i) => {
+    const ligne = document.createElement("div");
+    ligne.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px 0;";
+    const complet = i <= indexStatutActuel;
+    ligne.innerHTML = `
+      <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;
+        background:${complet ? "var(--olive)" : "var(--bordure)"};"></span>
+      <span style="color:${complet ? "var(--texte)" : "var(--texte-doux)"}; font-weight:${complet ? "600" : "400"};">
+        ${statut.label}
+      </span>
+    `;
+    conteneurEtapes.appendChild(ligne);
+  });
+
+  const { data: notes } = await client
+    .from("project_notes")
+    .select("*")
+    .eq("project_id", idProjet)
+    .eq("visible_client", true)
+    .order("created_at", { ascending: false });
+
+  if (notes && notes.length > 0) {
+    const conteneurNotes = document.getElementById("liste-notes");
+    conteneurNotes.innerHTML = "";
+    notes.forEach((note) => {
+      const bloc = document.createElement("div");
+      bloc.style.cssText = "padding:12px 0; border-bottom:1px solid var(--bordure);";
+      bloc.innerHTML = `<p style="margin:0;">${note.contenu}</p><p class="aide" style="margin:4px 0 0;">${new Date(note.created_at).toLocaleDateString("fr-FR")}</p>`;
+      conteneurNotes.appendChild(bloc);
+    });
+  }
+
+  document.getElementById("contenu-chargement").style.display = "none";
+  document.getElementById("contenu-projet").style.display = "block";
+})();
+</script>
+</body>
+</html>

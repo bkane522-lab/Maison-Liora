@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mon profil — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora</a>
+    <div class="nav-liens"><a href="/dashboard.html">Mon espace</a></div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur conteneur-etroit">
+    <div class="centre">
+      <div class="arche-motif"></div>
+      <h1>Mon profil</h1>
+    </div>
+
+    <form id="form-profil" class="carte">
+      <div class="champ">
+        <label for="nom">Nom complet</label>
+        <input id="nom" type="text" required />
+      </div>
+      <div class="champ">
+        <label for="email">Adresse e-mail</label>
+        <input id="email" type="email" disabled />
+        <p class="aide">L'adresse e-mail ne peut pas être modifiée ici.</p>
+      </div>
+      <div class="champ">
+        <label for="telephone">Téléphone</label>
+        <input id="telephone" type="tel" placeholder="Facultatif" />
+      </div>
+      <button type="submit" class="btn btn-primaire btn-bloc" id="btn-enregistrer">Enregistrer</button>
+    </form>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+(async () => {
+  const utilisateur = await exigerSession();
+  if (!utilisateur) return;
+
+  const client = await obtenirClientSupabase();
+  document.getElementById("email").value = utilisateur.email;
+
+  const { data: profil } = await client.from("profiles").select("*").eq("id", utilisateur.id).maybeSingle();
+  if (profil) {
+    document.getElementById("nom").value = profil.nom_complet || "";
+    document.getElementById("telephone").value = profil.telephone || "";
+  }
+
+  document.getElementById("form-profil").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const bouton = document.getElementById("btn-enregistrer");
+    bouton.disabled = true;
+    bouton.textContent = "Enregistrement…";
+
+    const { error } = await client.from("profiles").update({
+      nom_complet: document.getElementById("nom").value,
+      telephone: document.getElementById("telephone").value,
+    }).eq("id", utilisateur.id);
+
+    if (error) {
+      afficherToast("Erreur lors de l'enregistrement.", true);
+    } else {
+      afficherToast("Profil mis à jour.");
+    }
+    bouton.disabled = false;
+    bouton.textContent = "Enregistrer";
+  });
+})();
+</script>
+</body>
+</html>

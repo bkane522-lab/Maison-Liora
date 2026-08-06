@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Connexion — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora</a>
+    <div class="nav-liens"><a href="/register.html">Créer un compte</a></div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="conteneur conteneur-etroit">
+    <div class="centre">
+      <div class="arche-motif"></div>
+      <h1>Connexion</h1>
+      <p>Retrouvez votre dossier et son avancement.</p>
+    </div>
+
+    <form id="form-connexion" class="carte">
+      <div class="champ">
+        <label for="email">Adresse e-mail</label>
+        <input id="email" name="email" type="email" required autocomplete="email" />
+      </div>
+      <div class="champ">
+        <label for="mot-de-passe">Mot de passe</label>
+        <input id="mot-de-passe" name="mot-de-passe" type="password" required autocomplete="current-password" />
+      </div>
+      <div id="message-erreur" class="erreur-texte" style="display:none;"></div>
+      <button type="submit" class="btn btn-primaire btn-bloc btn-large" id="btn-connexion">Se connecter</button>
+      <p class="aide centre" style="margin-top: 16px;"><a href="/forgot-password.html">Mot de passe oublié ?</a></p>
+    </form>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+  const form = document.getElementById("form-connexion");
+  const messageErreur = document.getElementById("message-erreur");
+  const bouton = document.getElementById("btn-connexion");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    messageErreur.style.display = "none";
+    bouton.disabled = true;
+    bouton.textContent = "Connexion…";
+
+    try {
+      const client = await obtenirClientSupabase();
+      const email = document.getElementById("email").value.trim();
+      const motDePasse = document.getElementById("mot-de-passe").value;
+
+      const { data, error } = await client.auth.signInWithPassword({ email, password: motDePasse });
+      if (error) throw error;
+
+      const admin = await estAdmin(data.user.id);
+      window.location.href = admin ? "/pages/admin/dashboard.html" : "/dashboard.html";
+    } catch (err) {
+      messageErreur.textContent = "E-mail ou mot de passe incorrect.";
+      messageErreur.style.display = "block";
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Se connecter";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nouveau projet — Maison Liora</title>
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora</a>
+    <div class="nav-liens"><a href="/dashboard.html">Retour à mon espace</a></div>
+  </div>
+</nav>
+
+<section class="section" style="padding-top: 40px;">
+  <div class="conteneur" style="max-width: 640px;">
+    <div class="progression" id="progression"></div>
+
+    <!-- Étape 1 : type de projet -->
+    <div class="etape" data-etape="1">
+      <span class="eyebrow">Étape 1 sur 7</span>
+      <h2>Quel type de projet ?</h2>
+      <p>Choisissez l'accompagnement le plus proche de votre besoin.</p>
+      <div class="grille-choix" id="choix-type"></div>
+    </div>
+
+    <!-- Étape 2 : style -->
+    <div class="etape" data-etape="2" style="display:none;">
+      <span class="eyebrow">Étape 2 sur 7</span>
+      <h2>Quel style vous ressemble ?</h2>
+      <p>Sélectionnez le style qui vous inspire le plus aujourd'hui.</p>
+      <div class="grille-choix" id="choix-style"></div>
+    </div>
+
+    <!-- Étape 3 : questionnaire -->
+    <div class="etape" data-etape="3" style="display:none;">
+      <span class="eyebrow">Étape 3 sur 7</span>
+      <h2>Parlez-nous de votre espace</h2>
+      <form id="form-questionnaire" class="carte" style="margin-top:20px;">
+        <div class="champ">
+          <label for="q-titre">Un nom pour ce projet</label>
+          <input id="q-titre" type="text" placeholder="Ex. Salon lumière du matin" required />
+        </div>
+        <div class="champ">
+          <label for="q-pieces">Pièce(s) concernée(s)</label>
+          <input id="q-pieces" type="text" placeholder="Ex. Salon, entrée" required />
+        </div>
+        <div class="champ">
+          <label for="q-budget">Budget approximatif</label>
+          <select id="q-budget" required>
+            <option value="">Sélectionner…</option>
+            <option value="moins-2000">Moins de 2 000 €</option>
+            <option value="2000-5000">2 000 – 5 000 €</option>
+            <option value="5000-15000">5 000 – 15 000 €</option>
+            <option value="plus-15000">Plus de 15 000 €</option>
+            <option value="a-definir">À définir ensemble</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="q-delai">Délai souhaité</label>
+          <select id="q-delai" required>
+            <option value="">Sélectionner…</option>
+            <option value="urgent">Le plus tôt possible</option>
+            <option value="1-3-mois">1 à 3 mois</option>
+            <option value="3-6-mois">3 à 6 mois</option>
+            <option value="flexible">Flexible</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="q-description">Décrivez votre projet</label>
+          <textarea id="q-description" placeholder="Ambiance recherchée, contraintes, inspirations…" required></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- Étape 4 : mesures -->
+    <div class="etape" data-etape="4" style="display:none;">
+      <span class="eyebrow">Étape 4 sur 7</span>
+      <h2>Vos mesures</h2>
+      <p>Des dimensions approximatives suffisent pour démarrer.</p>
+      <form id="form-mesures" class="carte" style="margin-top:20px;">
+        <div class="grille-2">
+          <div class="champ">
+            <label for="m-longueur">Longueur (m)</label>
+            <input id="m-longueur" type="number" step="0.1" min="0" />
+          </div>
+          <div class="champ">
+            <label for="m-largeur">Largeur (m)</label>
+            <input id="m-largeur" type="number" step="0.1" min="0" />
+          </div>
+        </div>
+        <div class="champ">
+          <label for="m-hauteur">Hauteur sous plafond (m)</label>
+          <input id="m-hauteur" type="number" step="0.1" min="0" />
+        </div>
+        <div class="champ">
+          <label for="m-notes">Précisions utiles</label>
+          <textarea id="m-notes" placeholder="Fenêtres, ouvertures, éléments fixes…"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- Étape 5 : photos -->
+    <div class="etape" data-etape="5" style="display:none;">
+      <span class="eyebrow">Étape 5 sur 7</span>
+      <h2>Quelques photos de l'espace</h2>
+      <p>Facultatif mais très utile pour l'analyse de votre dossier.</p>
+      <div class="zone-upload" id="zone-photos">
+        <p style="margin:0;">Cliquez pour ajouter des photos</p>
+      </div>
+      <input type="file" id="input-photos" accept="image/*" multiple hidden />
+      <div class="miniatures" id="miniatures-photos"></div>
+    </div>
+
+    <!-- Étape 6 : documents + RDV -->
+    <div class="etape" data-etape="6" style="display:none;">
+      <span class="eyebrow">Étape 6 sur 7</span>
+      <h2>Documents et rendez-vous</h2>
+      <p>Plans, devis existants… (facultatif)</p>
+      <div class="zone-upload" id="zone-documents">
+        <p style="margin:0;">Cliquez pour ajouter des documents</p>
+      </div>
+      <input type="file" id="input-documents" multiple hidden />
+      <div class="miniatures" id="liste-documents"></div>
+
+      <form id="form-rdv" class="carte" style="margin-top:24px;">
+        <div class="champ">
+          <label for="rdv-date">Date souhaitée pour un premier échange</label>
+          <input id="rdv-date" type="date" />
+        </div>
+        <div class="champ">
+          <label for="rdv-creneau">Créneau préféré</label>
+          <select id="rdv-creneau">
+            <option value="">Sélectionner…</option>
+            <option value="matin">Matin</option>
+            <option value="apres-midi">Après-midi</option>
+            <option value="soir">Soir</option>
+          </select>
+        </div>
+      </form>
+    </div>
+
+    <!-- Étape 7 : récapitulatif -->
+    <div class="etape" data-etape="7" style="display:none;">
+      <span class="eyebrow">Étape 7 sur 7</span>
+      <h2>Vérifiez votre dossier</h2>
+      <div class="carte" id="recapitulatif" style="margin-top:20px;"></div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:32px;">
+      <button class="btn btn-secondaire" id="btn-precedent" style="visibility:hidden;">Précédent</button>
+      <button class="btn btn-primaire" id="btn-suivant">Continuer</button>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config/brand.config.js"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+(async () => {
+  const utilisateur = await exigerSession();
+  if (!utilisateur) return;
+
+  const TOTAL_ETAPES = 7;
+  let etapeCourante = 1;
+  const etat = {
+    typeProjet: null,
+    style: null,
+    photos: [],
+    documents: [],
+  };
+
+  // --- Progression ---
+  const conteneurProgression = document.getElementById("progression");
+  for (let i = 0; i < TOTAL_ETAPES; i++) {
+    const barre = document.createElement("div");
+    barre.className = "progression-etape" + (i === 0 ? " active" : "");
+    conteneurProgression.appendChild(barre);
+  }
+  function majProgression() {
+    document.querySelectorAll(".progression-etape").forEach((el, i) => {
+      el.classList.toggle("active", i < etapeCourante);
+    });
+  }
+
+  // --- Étape 1 : type de projet ---
+  const choixType = document.getElementById("choix-type");
+  window.BRAND.projectTypes.forEach((type) => {
+    const carte = document.createElement("div");
+    carte.className = "choix-carte";
+    carte.dataset.id = type.id;
+    carte.innerHTML = `<h4>${type.label}</h4>`;
+    carte.addEventListener("click", () => {
+      document.querySelectorAll("#choix-type .choix-carte").forEach((c) => c.classList.remove("selectionne"));
+      carte.classList.add("selectionne");
+      etat.typeProjet = type.id;
+    });
+    choixType.appendChild(carte);
+  });
+
+  // --- Étape 2 : style ---
+  const choixStyle = document.getElementById("choix-style");
+  window.BRAND.styles.forEach((style) => {
+    const carte = document.createElement("div");
+    carte.className = "choix-carte";
+    carte.dataset.id = style.id;
+    carte.innerHTML = `<h4>${style.label}</h4>`;
+    carte.addEventListener("click", () => {
+      document.querySelectorAll("#choix-style .choix-carte").forEach((c) => c.classList.remove("selectionne"));
+      carte.classList.add("selectionne");
+      etat.style = style.id;
+    });
+    choixStyle.appendChild(carte);
+  });
+
+  // --- Étape 5 & 6 : upload ---
+  function configurerZoneUpload(zoneId, inputId, miniaturesId, tableauCible) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    const miniatures = document.getElementById(miniaturesId);
+    zone.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => {
+      Array.from(input.files).forEach((fichier) => {
+        tableauCible.push(fichier);
+        const vignette = document.createElement("div");
+        vignette.className = "miniature";
+        if (fichier.type.startsWith("image/")) {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(fichier);
+          vignette.appendChild(img);
+        } else {
+          vignette.style.display = "flex";
+          vignette.style.alignItems = "center";
+          vignette.style.justifyContent = "center";
+          vignette.style.fontSize = "0.7rem";
+          vignette.style.padding = "6px";
+          vignette.textContent = fichier.name;
+        }
+        miniatures.appendChild(vignette);
+      });
+    });
+  }
+  configurerZoneUpload("zone-photos", "input-photos", "miniatures-photos", etat.photos);
+  configurerZoneUpload("zone-documents", "input-documents", "liste-documents", etat.documents);
+
+  // --- Navigation ---
+  const btnSuivant = document.getElementById("btn-suivant");
+  const btnPrecedent = document.getElementById("btn-precedent");
+
+  function afficherEtape(n) {
+    document.querySelectorAll(".etape").forEach((el) => {
+      el.style.display = Number(el.dataset.etape) === n ? "block" : "none";
+    });
+    btnPrecedent.style.visibility = n === 1 ? "hidden" : "visible";
+    btnSuivant.textContent = n === TOTAL_ETAPES ? "Envoyer mon dossier" : "Continuer";
+    majProgression();
+    if (n === 7) construireRecapitulatif();
+  }
+
+  function validerEtape(n) {
+    if (n === 1 && !etat.typeProjet) { afficherToast("Choisissez un type de projet.", true); return false; }
+    if (n === 2 && !etat.style) { afficherToast("Choisissez un style.", true); return false; }
+    if (n === 3 && !document.getElementById("form-questionnaire").reportValidity()) return false;
+    return true;
+  }
+
+  function construireRecapitulatif() {
+    const typeLabel = window.BRAND.projectTypes.find((t) => t.id === etat.typeProjet)?.label || "";
+    const styleLabel = window.BRAND.styles.find((s) => s.id === etat.style)?.label || "";
+    document.getElementById("recapitulatif").innerHTML = `
+      <p><strong>Type de projet :</strong> ${typeLabel}</p>
+      <p><strong>Style :</strong> ${styleLabel}</p>
+      <p><strong>Titre :</strong> ${document.getElementById("q-titre").value}</p>
+      <p><strong>Pièces :</strong> ${document.getElementById("q-pieces").value}</p>
+      <p><strong>Photos jointes :</strong> ${etat.photos.length}</p>
+      <p><strong>Documents joints :</strong> ${etat.documents.length}</p>
+    `;
+  }
+
+  btnPrecedent.addEventListener("click", () => {
+    if (etapeCourante > 1) { etapeCourante--; afficherEtape(etapeCourante); }
+  });
+
+  btnSuivant.addEventListener("click", async () => {
+    if (!validerEtape(etapeCourante)) return;
+    if (etapeCourante < TOTAL_ETAPES) {
+      etapeCourante++;
+      afficherEtape(etapeCourante);
+    } else {
+      await soumettreDossier();
+    }
+  });
+
+  async function soumettreDossier() {
+    btnSuivant.disabled = true;
+    btnSuivant.textContent = "Envoi en cours…";
+    const client = await obtenirClientSupabase();
+
+    try {
+      // 1. Création du projet
+      const { data: projet, error: erreurProjet } = await client
+        .from("projects")
+        .insert({
+          client_id: utilisateur.id,
+          titre: document.getElementById("q-titre").value,
+          type_projet: etat.typeProjet,
+          style: etat.style,
+          statut: "recu",
+        })
+        .select()
+        .single();
+      if (erreurProjet) throw erreurProjet;
+
+      // 2. Questionnaire + mesures
+      const { error: erreurQuestionnaire } = await client.from("questionnaires").insert({
+        project_id: projet.id,
+        pieces: document.getElementById("q-pieces").value,
+        budget: document.getElementById("q-budget").value,
+        delai: document.getElementById("q-delai").value,
+        description: document.getElementById("q-description").value,
+        longueur_m: parseFloat(document.getElementById("m-longueur").value) || null,
+        largeur_m: parseFloat(document.getElementById("m-largeur").value) || null,
+        hauteur_m: parseFloat(document.getElementById("m-hauteur").value) || null,
+        notes_mesures: document.getElementById("m-notes").value,
+      });
+      if (erreurQuestionnaire) throw erreurQuestionnaire;
+
+      // 3. Upload des fichiers (photos + documents)
+      const tousLesFichiers = [
+        ...etat.photos.map((f) => ({ fichier: f, categorie: "photo" })),
+        ...etat.documents.map((f) => ({ fichier: f, categorie: "document" })),
+      ];
+      for (const { fichier, categorie } of tousLesFichiers) {
+        const bucket = categorie === "photo" ? "photos-projets" : "documents-projets";
+        const chemin = `${utilisateur.id}/${projet.id}/${Date.now()}-${fichier.name}`;
+        const { error: erreurUpload } = await client.storage.from(bucket).upload(chemin, fichier);
+        if (erreurUpload) throw erreurUpload;
+        await client.from("files").insert({
+          project_id: projet.id,
+          bucket,
+          chemin,
+          nom_original: fichier.name,
+          categorie,
+        });
+      }
+
+      // 4. Rendez-vous (si une date a été renseignée)
+      const dateRdv = document.getElementById("rdv-date").value;
+      if (dateRdv) {
+        await client.from("appointments").insert({
+          project_id: projet.id,
+          date_souhaitee: dateRdv,
+          creneau: document.getElementById("rdv-creneau").value || null,
+          statut: "demandee",
+        });
+      }
+
+      window.location.href = `/suivi.html?id=${projet.id}`;
+    } catch (err) {
+      afficherToast(err.message || "Une erreur est survenue lors de l'envoi.", true);
+      btnSuivant.disabled = false;
+      btnSuivant.textContent = "Envoyer mon dossier";
+    }
+  }
+
+  afficherEtape(1);
+})();
+</script>
+</body>
+</html>

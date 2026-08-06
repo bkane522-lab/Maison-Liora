@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maison Liora — Votre intérieur, pensé avec sens et élégance</title>
+<meta name="description" content="Maison Liora accompagne vos projets de décoration intérieure : coaching déco, aménagement, rénovation légère, conseil couleur et optimisation d'espace." />
+<link rel="icon" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-interieur">
+    <a href="/" class="logo-texte">
+      <span class="logo-monogramme">L</span>
+      Maison Liora
+    </a>
+    <div class="nav-liens">
+      <a href="#services">Services</a>
+      <a href="#processus">Comment ça marche</a>
+      <a href="/login.html">Connexion</a>
+      <a href="/register.html" class="btn btn-primaire">Démarrer mon projet</a>
+    </div>
+  </div>
+</nav>
+
+<header class="section">
+  <div class="conteneur centre" style="max-width: 760px;">
+    <span class="eyebrow">Décoration d'intérieur sur mesure</span>
+    <h1>Votre intérieur, pensé<br/>avec sens et élégance.</h1>
+    <p style="font-size: 1.1rem; max-width: 520px; margin: 0 auto 32px;">
+      Maison Liora accompagne chaque projet — d'une pièce à repenser à une
+      rénovation complète — avec un regard attentif et un processus clair,
+      du premier échange à la proposition finale.
+    </p>
+    <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <a href="/register.html" class="btn btn-primaire btn-large">Soumettre mon projet</a>
+      <a href="#processus" class="btn btn-secondaire btn-large">Découvrir le processus</a>
+    </div>
+  </div>
+</header>
+
+<section class="section section--creme" id="services">
+  <div class="conteneur">
+    <div class="centre" style="max-width: 560px; margin: 0 auto 48px;">
+      <div class="arche-motif"></div>
+      <h2>Un accompagnement pour chaque besoin</h2>
+      <p>Chaque projet est unique : choisissez le type d'accompagnement le plus proche de votre besoin, il pourra toujours être ajusté ensemble.</p>
+    </div>
+    <div class="grille-3" id="grille-services"></div>
+  </div>
+</section>
+
+<section class="section" id="processus">
+  <div class="conteneur">
+    <div class="centre" style="max-width: 560px; margin: 0 auto 56px;">
+      <span class="eyebrow">Le processus</span>
+      <h2>De votre dossier à votre proposition</h2>
+    </div>
+    <div class="grille-3">
+      <div class="carte">
+        <h3>1. Votre dossier</h3>
+        <p>Vous décrivez votre projet, votre style, vos mesures et quelques photos de l'espace concerné.</p>
+      </div>
+      <div class="carte">
+        <h3>2. L'analyse</h3>
+        <p>Votre dossier est étudié avec attention ; un rendez-vous est proposé pour affiner ensemble les intentions.</p>
+      </div>
+      <div class="carte">
+        <h3>3. La proposition</h3>
+        <p>Vous recevez une proposition claire, et suivez l'avancement de votre dossier à chaque étape.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--olive">
+  <div class="conteneur centre" style="max-width: 620px;">
+    <div class="arche-motif" style="border-color: var(--dore-clair);"></div>
+    <h2>Prête à donner du sens à votre intérieur ?</h2>
+    <p>Créez votre dossier en quelques minutes — sans engagement.</p>
+    <a href="/register.html" class="btn btn-dore btn-large">Commencer</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>Maison Liora — Votre intérieur, pensé avec sens et élégance.</p>
+</footer>
+
+<script src="/config/brand.config.js"></script>
+<script>
+  const grille = document.getElementById("grille-services");
+  window.BRAND.projectTypes.forEach((type) => {
+    const carte = document.createElement("div");
+    carte.className = "carte";
+    carte.innerHTML = `<h3>${type.label}</h3><p>Un accompagnement dédié, adapté à l'ampleur de votre projet.</p>`;
+    grille.appendChild(carte);
+  });
+</script>
+</body>
+</html>

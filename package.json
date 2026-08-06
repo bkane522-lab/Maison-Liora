@@ -1,0 +1,9 @@
+{
+  "name": "maison-liora",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Maison Liora — application de décoration d'intérieur (client + admin), HTML/CSS/JS vanilla + Supabase + fonctions serverless Vercel.",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
