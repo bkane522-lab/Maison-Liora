@@ -100,7 +100,10 @@ const LIBELLES_CRENEAU = {
   if (!admin) { window.location.href = "/dashboard.html"; return; }
 
   const idProjet = new URLSearchParams(window.location.search).get("id");
-  if (!idProjet) { window.location.href = "/pages/admin/dashboard.html"; return; }
+  if (!idProjet) {
+    document.getElementById("chargement").textContent = "Aucun identifiant de dossier fourni dans l'URL.";
+    return;
+  }
 
   const typesParId = Object.fromEntries(window.BRAND.projectTypes.map((t) => [t.id, t.label]));
 
@@ -113,13 +116,20 @@ const LIBELLES_CRENEAU = {
   });
 
   async function charger() {
-    const { data: projet } = await client
+    const { data: projet, error: erreurChargement } = await client
       .from("projects")
       .select("*, profiles:client_id(nom_complet, email, telephone), questionnaires(*)")
       .eq("id", idProjet)
-      .single();
+      .maybeSingle();
 
-    if (!projet) { document.getElementById("chargement").textContent = "Dossier introuvable."; return; }
+    if (erreurChargement) {
+      document.getElementById("chargement").textContent = `Erreur de chargement : ${erreurChargement.message}`;
+      return;
+    }
+    if (!projet) {
+      document.getElementById("chargement").textContent = `Dossier introuvable (id: ${idProjet}).`;
+      return;
+    }
 
     document.getElementById("type-projet").textContent = typesParId[projet.type_projet] || "";
     document.getElementById("titre-projet").textContent = projet.titre;
