@@ -11,7 +11,7 @@
 
 <nav class="nav">
   <div class="nav-interieur">
-    <a href="/" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
+    <a href="/pages/admin/dashboard.html" class="logo-texte"><span class="logo-monogramme">L</span> Maison Liora <span class="badge" style="margin-left:8px;">Admin</span></a>
     <div class="nav-liens">
       <a href="/pages/admin/dashboard.html">← Tous les dossiers</a>
     </div>
@@ -128,7 +128,6 @@
       `;
     }
 
-    // Fichiers : URLs signées (buckets privés)
     const { data: fichiers } = await client.from("files").select("*").eq("project_id", idProjet);
     const conteneurFichiers = document.getElementById("liste-fichiers");
     for (const fichier of fichiers || []) {
@@ -142,7 +141,6 @@
       conteneurFichiers.appendChild(lien);
     }
 
-    // Rendez-vous
     const { data: rdvs } = await client.from("appointments").select("*").eq("project_id", idProjet).order("created_at", { ascending: false });
     if (rdvs && rdvs.length > 0) {
       document.getElementById("detail-rdv").innerHTML = rdvs.map((r) => `
