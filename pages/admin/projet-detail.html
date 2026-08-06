@@ -80,17 +80,8 @@
 <script src="/config/brand.config.js"></script>
 <script src="/js/supabase-client.js"></script>
 <script>
-// Libellés lisibles pour les valeurs stockées en base (RDV)
-const LIBELLES_STATUT_RDV = {
-  demandee: "Demandée",
-  confirmee: "Confirmée",
-  annulee: "Annulée",
-};
-const LIBELLES_CRENEAU = {
-  matin: "Matin",
-  "apres-midi": "Après-midi",
-  soir: "Soir",
-};
+const LIBELLES_STATUT_RDV = { demandee: "Demandée", confirmee: "Confirmée", annulee: "Annulée" };
+const LIBELLES_CRENEAU = { matin: "Matin", "apres-midi": "Après-midi", soir: "Soir" };
 
 (async () => {
   const utilisateur = await exigerSession("/login.html");
@@ -116,14 +107,15 @@ const LIBELLES_CRENEAU = {
   });
 
   async function charger() {
-    const { data: projet, error: erreurChargement } = await client
+    // 1. Le projet et son questionnaire (relation directe questionnaires -> projects, celle-ci fonctionne)
+    const { data: projet, error: erreurProjet } = await client
       .from("projects")
-      .select("*, profiles:client_id(nom_complet, email, telephone), questionnaires(*)")
+      .select("*, questionnaires(*)")
       .eq("id", idProjet)
       .maybeSingle();
 
-    if (erreurChargement) {
-      document.getElementById("chargement").textContent = `Erreur de chargement : ${erreurChargement.message}`;
+    if (erreurProjet) {
+      document.getElementById("chargement").textContent = `Erreur de chargement : ${erreurProjet.message}`;
       return;
     }
     if (!projet) {
@@ -131,11 +123,18 @@ const LIBELLES_CRENEAU = {
       return;
     }
 
+    // 2. Le profil du client, récupéré séparément (évite le souci de relation projects<->profiles)
+    const { data: profilClient } = await client
+      .from("profiles")
+      .select("nom_complet, email, telephone")
+      .eq("id", projet.client_id)
+      .maybeSingle();
+
     document.getElementById("type-projet").textContent = typesParId[projet.type_projet] || "";
     document.getElementById("titre-projet").textContent = projet.titre;
     selectStatut.value = projet.statut;
     document.getElementById("detail-client").innerHTML = `
-      ${projet.profiles?.nom_complet || "—"}<br/>${projet.profiles?.email || "—"}<br/>${projet.profiles?.telephone || ""}
+      ${profilClient?.nom_complet || "—"}<br/>${profilClient?.email || "—"}<br/>${profilClient?.telephone || ""}
     `;
 
     const questionnaire = projet.questionnaires?.[0];
@@ -176,7 +175,6 @@ const LIBELLES_CRENEAU = {
       conteneurFichiers.appendChild(lien);
     }
 
-    // Rendez-vous : libellés lisibles au lieu des valeurs brutes
     const { data: rdvs } = await client.from("appointments").select("*").eq("project_id", idProjet).order("created_at", { ascending: false });
     if (rdvs && rdvs.length > 0) {
       document.getElementById("detail-rdv").innerHTML = rdvs.map((r) => `
