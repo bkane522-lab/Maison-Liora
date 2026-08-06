@@ -21,6 +21,7 @@
 <section class="section">
   <div class="conteneur" style="max-width: 820px;">
     <div id="chargement"><p>Chargement…</p></div>
+    <p id="erreur-chargement" style="display:none; color: var(--erreur);"></p>
 
     <div id="contenu" style="display:none;">
       <span class="eyebrow" id="type-projet"></span>
@@ -101,22 +102,44 @@
   });
 
   async function charger() {
-    const { data: projet } = await client
+    const chargementEl = document.getElementById("chargement");
+    const erreurEl = document.getElementById("erreur-chargement");
+
+    // 1. Récupérer le projet (sans jointure automatique)
+    const { data: projet, error: erreurProjet } = await client
       .from("projects")
-      .select("*, profiles:client_id(nom_complet, email, telephone), questionnaires(*)")
+      .select("*")
       .eq("id", idProjet)
       .single();
 
-    if (!projet) { document.getElementById("chargement").textContent = "Dossier introuvable."; return; }
+    if (erreurProjet || !projet) {
+      chargementEl.style.display = "none";
+      erreurEl.textContent = "Dossier introuvable ou erreur : " + (erreurProjet?.message || "inconnue");
+      erreurEl.style.display = "block";
+      return;
+    }
+
+    // 2. Récupérer le profil du client séparément
+    const { data: profil } = await client
+      .from("profiles")
+      .select("nom_complet, email, telephone")
+      .eq("id", projet.client_id)
+      .maybeSingle();
+
+    // 3. Récupérer le questionnaire séparément
+    const { data: questionnaires } = await client
+      .from("questionnaires")
+      .select("*")
+      .eq("project_id", idProjet);
+    const questionnaire = questionnaires?.[0];
 
     document.getElementById("type-projet").textContent = typesParId[projet.type_projet] || "";
     document.getElementById("titre-projet").textContent = projet.titre;
     selectStatut.value = projet.statut;
     document.getElementById("detail-client").innerHTML = `
-      ${projet.profiles?.nom_complet || "—"}<br/>${projet.profiles?.email || "—"}<br/>${projet.profiles?.telephone || ""}
+      ${profil?.nom_complet || "—"}<br/>${profil?.email || "—"}<br/>${profil?.telephone || ""}
     `;
 
-    const questionnaire = projet.questionnaires?.[0];
     if (questionnaire) {
       document.getElementById("detail-questionnaire").innerHTML = `
         <p><strong>Pièces :</strong> ${questionnaire.pieces || "—"}</p>
@@ -126,6 +149,8 @@
         <p><strong>Mesures :</strong> ${questionnaire.longueur_m || "?"}m × ${questionnaire.largeur_m || "?"}m, hauteur ${questionnaire.hauteur_m || "?"}m</p>
         <p><strong>Notes mesures :</strong> ${questionnaire.notes_mesures || "—"}</p>
       `;
+    } else {
+      document.getElementById("detail-questionnaire").innerHTML = "<p class='aide'>Aucun questionnaire.</p>";
     }
 
     const { data: fichiers } = await client.from("files").select("*").eq("project_id", idProjet);
@@ -150,7 +175,7 @@
     }
 
     await chargerNotes();
-    document.getElementById("chargement").style.display = "none";
+    chargementEl.style.display = "none";
     document.getElementById("contenu").style.display = "block";
   }
 
