@@ -21,7 +21,6 @@
 <section class="section">
   <div class="conteneur" style="max-width: 820px;">
     <div id="chargement"><p>Chargement…</p></div>
-    <p id="erreur-chargement" style="display:none; color: var(--erreur);"></p>
 
     <div id="contenu" style="display:none;">
       <span class="eyebrow" id="type-projet"></span>
@@ -81,6 +80,18 @@
 <script src="/config/brand.config.js"></script>
 <script src="/js/supabase-client.js"></script>
 <script>
+// Libellés lisibles pour les valeurs stockées en base (RDV)
+const LIBELLES_STATUT_RDV = {
+  demandee: "Demandée",
+  confirmee: "Confirmée",
+  annulee: "Annulée",
+};
+const LIBELLES_CRENEAU = {
+  matin: "Matin",
+  "apres-midi": "Après-midi",
+  soir: "Soir",
+};
+
 (async () => {
   const utilisateur = await exigerSession("/login.html");
   if (!utilisateur) return;
@@ -102,44 +113,22 @@
   });
 
   async function charger() {
-    const chargementEl = document.getElementById("chargement");
-    const erreurEl = document.getElementById("erreur-chargement");
-
-    // 1. Récupérer le projet (sans jointure automatique)
-    const { data: projet, error: erreurProjet } = await client
+    const { data: projet } = await client
       .from("projects")
-      .select("*")
+      .select("*, profiles:client_id(nom_complet, email, telephone), questionnaires(*)")
       .eq("id", idProjet)
       .single();
 
-    if (erreurProjet || !projet) {
-      chargementEl.style.display = "none";
-      erreurEl.textContent = "Dossier introuvable ou erreur : " + (erreurProjet?.message || "inconnue");
-      erreurEl.style.display = "block";
-      return;
-    }
-
-    // 2. Récupérer le profil du client séparément
-    const { data: profil } = await client
-      .from("profiles")
-      .select("nom_complet, email, telephone")
-      .eq("id", projet.client_id)
-      .maybeSingle();
-
-    // 3. Récupérer le questionnaire séparément
-    const { data: questionnaires } = await client
-      .from("questionnaires")
-      .select("*")
-      .eq("project_id", idProjet);
-    const questionnaire = questionnaires?.[0];
+    if (!projet) { document.getElementById("chargement").textContent = "Dossier introuvable."; return; }
 
     document.getElementById("type-projet").textContent = typesParId[projet.type_projet] || "";
     document.getElementById("titre-projet").textContent = projet.titre;
     selectStatut.value = projet.statut;
     document.getElementById("detail-client").innerHTML = `
-      ${profil?.nom_complet || "—"}<br/>${profil?.email || "—"}<br/>${profil?.telephone || ""}
+      ${projet.profiles?.nom_complet || "—"}<br/>${projet.profiles?.email || "—"}<br/>${projet.profiles?.telephone || ""}
     `;
 
+    const questionnaire = projet.questionnaires?.[0];
     if (questionnaire) {
       document.getElementById("detail-questionnaire").innerHTML = `
         <p><strong>Pièces :</strong> ${questionnaire.pieces || "—"}</p>
@@ -149,33 +138,45 @@
         <p><strong>Mesures :</strong> ${questionnaire.longueur_m || "?"}m × ${questionnaire.largeur_m || "?"}m, hauteur ${questionnaire.hauteur_m || "?"}m</p>
         <p><strong>Notes mesures :</strong> ${questionnaire.notes_mesures || "—"}</p>
       `;
-    } else {
-      document.getElementById("detail-questionnaire").innerHTML = "<p class='aide'>Aucun questionnaire.</p>";
     }
 
+    // Fichiers : vraies vignettes photo pour les images, icône document pour le reste
     const { data: fichiers } = await client.from("files").select("*").eq("project_id", idProjet);
     const conteneurFichiers = document.getElementById("liste-fichiers");
+    conteneurFichiers.innerHTML = "";
     for (const fichier of fichiers || []) {
       const { data: urlSignee } = await client.storage.from(fichier.bucket).createSignedUrl(fichier.chemin, 3600);
+      const estImage = fichier.categorie === "photo" || /\.(jpe?g|png|gif|webp|heic)$/i.test(fichier.nom_original || "");
+
       const lien = document.createElement("a");
       lien.href = urlSignee?.signedUrl || "#";
       lien.target = "_blank";
       lien.className = "miniature";
-      lien.style.cssText = "display:flex; align-items:center; justify-content:center; font-size:0.65rem; text-align:center; padding:4px;";
-      lien.textContent = fichier.nom_original;
+
+      if (estImage && urlSignee?.signedUrl) {
+        const img = document.createElement("img");
+        img.src = urlSignee.signedUrl;
+        img.alt = fichier.nom_original || "photo";
+        img.loading = "lazy";
+        lien.appendChild(img);
+      } else {
+        lien.style.cssText = "display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:0.65rem; text-align:center; padding:8px; background:var(--creme);";
+        lien.innerHTML = `<span style="font-size:1.4rem;">📄</span><span style="word-break:break-word;">${fichier.nom_original || "Document"}</span>`;
+      }
       conteneurFichiers.appendChild(lien);
     }
 
+    // Rendez-vous : libellés lisibles au lieu des valeurs brutes
     const { data: rdvs } = await client.from("appointments").select("*").eq("project_id", idProjet).order("created_at", { ascending: false });
     if (rdvs && rdvs.length > 0) {
       document.getElementById("detail-rdv").innerHTML = rdvs.map((r) => `
-        <p><strong>${r.date_souhaitee || "—"}</strong> ${r.creneau ? "· " + r.creneau : ""}<br/>
-        <span class="badge" style="margin-top:6px;">${r.statut}</span></p>
+        <p><strong>${r.date_souhaitee || "—"}</strong> ${r.creneau ? "· " + (LIBELLES_CRENEAU[r.creneau] || r.creneau) : ""}<br/>
+        <span class="badge" style="margin-top:6px;">${LIBELLES_STATUT_RDV[r.statut] || r.statut}</span></p>
       `).join("<hr/>");
     }
 
     await chargerNotes();
-    chargementEl.style.display = "none";
+    document.getElementById("chargement").style.display = "none";
     document.getElementById("contenu").style.display = "block";
   }
 
