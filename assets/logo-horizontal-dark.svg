@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80">
+  <circle cx="40" cy="40" r="34" fill="#3E4A34"/>
+  <path d="M28 52 V30 M28 52 H50" stroke="#FDFBF6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M28 30 a12 12 0 0 1 24 0" stroke="#D4B483" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <text x="86" y="48" font-family="Georgia, serif" font-size="30" fill="#FDFBF6">Maison Liora</text>
+</svg>
