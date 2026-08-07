@@ -55,7 +55,7 @@
 
           <div class="carte" style="margin-bottom:20px;">
             <h3>Rendez-vous</h3>
-            <div id="detail-rdv"><p>Aucun rendez-vous demandé.</p></div>
+            <div id="detail-rdv"><p class="aide">Aucun rendez-vous demandé.</p></div>
           </div>
 
           <div class="carte">
@@ -107,7 +107,6 @@ const LIBELLES_CRENEAU = { matin: "Matin", "apres-midi": "Après-midi", soir: "S
   });
 
   async function charger() {
-    // 1. Le projet et son questionnaire (relation directe questionnaires -> projects, celle-ci fonctionne)
     const { data: projet, error: erreurProjet } = await client
       .from("projects")
       .select("*, questionnaires(*)")
@@ -123,7 +122,6 @@ const LIBELLES_CRENEAU = { matin: "Matin", "apres-midi": "Après-midi", soir: "S
       return;
     }
 
-    // 2. Le profil du client, récupéré séparément (évite le souci de relation projects<->profiles)
     const { data: profilClient } = await client
       .from("profiles")
       .select("nom_complet, email, telephone")
@@ -149,7 +147,6 @@ const LIBELLES_CRENEAU = { matin: "Matin", "apres-midi": "Après-midi", soir: "S
       `;
     }
 
-    // Fichiers : vraies vignettes photo pour les images, icône document pour le reste
     const { data: fichiers } = await client.from("files").select("*").eq("project_id", idProjet);
     const conteneurFichiers = document.getElementById("liste-fichiers");
     conteneurFichiers.innerHTML = "";
@@ -175,17 +172,77 @@ const LIBELLES_CRENEAU = { matin: "Matin", "apres-midi": "Après-midi", soir: "S
       conteneurFichiers.appendChild(lien);
     }
 
-    const { data: rdvs } = await client.from("appointments").select("*").eq("project_id", idProjet).order("created_at", { ascending: false });
-    if (rdvs && rdvs.length > 0) {
-      document.getElementById("detail-rdv").innerHTML = rdvs.map((r) => `
-        <p><strong>${r.date_souhaitee || "—"}</strong> ${r.creneau ? "· " + (LIBELLES_CRENEAU[r.creneau] || r.creneau) : ""}<br/>
-        <span class="badge" style="margin-top:6px;">${LIBELLES_STATUT_RDV[r.statut] || r.statut}</span></p>
-      `).join("<hr/>");
-    }
-
+    await chargerRdvs();
     await chargerNotes();
     document.getElementById("chargement").style.display = "none";
     document.getElementById("contenu").style.display = "block";
+  }
+
+  // --- Rendez-vous : affichage éditable (statut + replanification) ---
+  async function chargerRdvs() {
+    const { data: rdvs } = await client
+      .from("appointments")
+      .select("*")
+      .eq("project_id", idProjet)
+      .order("created_at", { ascending: false });
+
+    const conteneur = document.getElementById("detail-rdv");
+    conteneur.innerHTML = "";
+
+    if (!rdvs || rdvs.length === 0) {
+      conteneur.innerHTML = "<p class='aide'>Aucun rendez-vous demandé.</p>";
+      return;
+    }
+
+    rdvs.forEach((rdv) => {
+      const bloc = document.createElement("div");
+      bloc.style.cssText = "padding:14px 0; border-bottom:1px solid var(--bordure);";
+      bloc.innerHTML = `
+        <div class="champ" style="margin-bottom:10px;">
+          <label>Date souhaitée</label>
+          <input type="date" class="rdv-date" value="${rdv.date_souhaitee || ""}" />
+        </div>
+        <div class="champ" style="margin-bottom:10px;">
+          <label>Créneau</label>
+          <select class="rdv-creneau">
+            <option value="">Sélectionner…</option>
+            <option value="matin" ${rdv.creneau === "matin" ? "selected" : ""}>Matin</option>
+            <option value="apres-midi" ${rdv.creneau === "apres-midi" ? "selected" : ""}>Après-midi</option>
+            <option value="soir" ${rdv.creneau === "soir" ? "selected" : ""}>Soir</option>
+          </select>
+        </div>
+        <div class="champ" style="margin-bottom:12px;">
+          <label>Statut du rendez-vous</label>
+          <select class="rdv-statut">
+            <option value="demandee" ${rdv.statut === "demandee" ? "selected" : ""}>Demandée</option>
+            <option value="confirmee" ${rdv.statut === "confirmee" ? "selected" : ""}>Confirmée</option>
+            <option value="annulee" ${rdv.statut === "annulee" ? "selected" : ""}>Annulée</option>
+          </select>
+        </div>
+        <button class="btn btn-secondaire btn-bloc rdv-enregistrer" type="button">Enregistrer ce rendez-vous</button>
+      `;
+
+      bloc.querySelector(".rdv-enregistrer").addEventListener("click", async () => {
+        const boutonEnregistrer = bloc.querySelector(".rdv-enregistrer");
+        boutonEnregistrer.disabled = true;
+        boutonEnregistrer.textContent = "Enregistrement…";
+
+        const { error } = await client
+          .from("appointments")
+          .update({
+            date_souhaitee: bloc.querySelector(".rdv-date").value || null,
+            creneau: bloc.querySelector(".rdv-creneau").value || null,
+            statut: bloc.querySelector(".rdv-statut").value,
+          })
+          .eq("id", rdv.id);
+
+        afficherToast(error ? "Erreur lors de l'enregistrement du rendez-vous." : "Rendez-vous mis à jour.", !!error);
+        boutonEnregistrer.disabled = false;
+        boutonEnregistrer.textContent = "Enregistrer ce rendez-vous";
+      });
+
+      conteneur.appendChild(bloc);
+    });
   }
 
   async function chargerNotes() {
