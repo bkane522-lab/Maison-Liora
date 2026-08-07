@@ -22,7 +22,7 @@
 
 <section class="section">
   <div class="conteneur">
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
       <div>
         <span class="eyebrow">Espace administrateur</span>
         <h1 style="margin:0;">Tous les dossiers</h1>
@@ -31,6 +31,11 @@
         <option value="">Tous les statuts</option>
       </select>
     </div>
+
+    <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--texte-doux); margin-bottom:24px;">
+      <input type="checkbox" id="afficher-archives" style="width:auto;" />
+      Afficher aussi les dossiers archivés
+    </label>
 
     <div id="liste-dossiers" style="display:grid; gap:14px;"></div>
     <p id="etat-vide" style="display:none;">Aucun dossier pour ce statut.</p>
@@ -57,16 +62,18 @@
     selectStatut.appendChild(option);
   });
 
+  const caseArchives = document.getElementById("afficher-archives");
   const typesParId = Object.fromEntries(window.BRAND.projectTypes.map((t) => [t.id, t.label]));
   const statutsParId = Object.fromEntries(window.BRAND.statuses.map((s) => [s.id, s.label]));
 
   async function chargerDossiers() {
     let requete = client
       .from("projects")
-      .select("id, titre, type_projet, statut, client_id, created_at")
+      .select("id, titre, type_projet, statut, client_id, archive, created_at")
       .order("created_at", { ascending: false });
 
     if (selectStatut.value) requete = requete.eq("statut", selectStatut.value);
+    if (!caseArchives.checked) requete = requete.eq("archive", false);
 
     const { data: dossiers, error } = await requete;
     const conteneur = document.getElementById("liste-dossiers");
@@ -85,7 +92,6 @@
     }
     etatVide.style.display = "none";
 
-    // Récupère les noms des clients séparément (évite le souci de relation projects<->profiles)
     const idsClients = [...new Set(dossiers.map((d) => d.client_id))];
     const { data: profils } = await client.from("profiles").select("id, nom_complet").in("id", idsClients);
     const nomsParClient = Object.fromEntries((profils || []).map((p) => [p.id, p.nom_complet]));
@@ -94,10 +100,11 @@
       const carte = document.createElement("a");
       carte.href = `/pages/admin/projet-detail.html?id=${dossier.id}`;
       carte.className = "carte carte-lien";
+      carte.style.opacity = dossier.archive ? "0.6" : "1";
       carte.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div>
-            <h3 style="margin-bottom:4px;">${dossier.titre || "Sans titre"}</h3>
+            <h3 style="margin-bottom:4px;">${dossier.titre || "Sans titre"} ${dossier.archive ? '<span class="aide">(archivé)</span>' : ""}</h3>
             <p style="margin:0;">${nomsParClient[dossier.client_id] || "Client"} · ${typesParId[dossier.type_projet] || ""}</p>
           </div>
           <span class="badge"><span class="badge-dot"></span>${statutsParId[dossier.statut] || dossier.statut}</span>
@@ -108,6 +115,7 @@
   }
 
   selectStatut.addEventListener("change", chargerDossiers);
+  caseArchives.addEventListener("change", chargerDossiers);
   chargerDossiers();
 })();
 
